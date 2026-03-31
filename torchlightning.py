@@ -33,7 +33,7 @@ class MNISTDataModule(pl.LightningDataModule):
 class SimpleLitModel(pl.LightningModule):
     def __init__(self, learning_rate: float, hidden_size: int):
         super().__init__()
-        self.save_hyperparameters() # Ważne dla WandB!
+        self.save_hyperparameters() 
         self.learning_rate = learning_rate
         
         self.model = nn.Sequential(
@@ -67,44 +67,35 @@ class SimpleLitModel(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-# 3. Optymalizacja z Optuną (Wymóg HW)
+
 def objective(trial):
-    # Optymalizujemy learning rate i rozmiar warstwy ukrytej
     lr = trial.suggest_float("lr", 1e-4, 1e-1, log=True)
     hidden_size = trial.suggest_categorical("hidden_size", [32, 64, 128])
     batch_size = trial.suggest_categorical("batch_size", [32, 64])
 
-    # Inicjalizacja modułów
     dict_args = {"learning_rate": lr, "hidden_size": hidden_size}
     model = SimpleLitModel(**dict_args)
     datamodule = MNISTDataModule(batch_size=batch_size)
 
-    # Inicjalizacja loggera WandB (Wymóg HW)
-    # Zmieniamy nazwę runu dla każdego triala, żeby nie nadpisywać danych
     wandb_logger = WandbLogger(project="hw-lightning-optuna", name=f"trial_{trial.number}")
 
-    # Trener Lightning
     trainer = pl.Trainer(
-        max_epochs=20, # Ustaw na 2-3 dla szybkiego testu na projekt domowy
+        max_epochs=20, 
         logger=wandb_logger,
         enable_progress_bar=True,
-        # accelerator="gpu", devices=1 # Odkomentuj jeśli masz GPU
     )
 
-    # Trenujemy model
     trainer.fit(model, datamodule=datamodule)
     
-    # Kończymy logowanie dla tego konkretnego runu w Wandb
     import wandb
     wandb.finish()
 
-    # Zwracamy validation loss z ostatniej epoki (Optuna będzie to minimalizować)
     return trainer.callback_metrics["val_loss"].item()
 
 if __name__ == "__main__":
     print("Rozpoczynamy poszukiwania hiperparametrów...")
     study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=10) # Zrób 3-5 trialów, żeby udowodnić, że działa
+    study.optimize(objective, n_trials=10)
 
     print("Najlepsze parametry:", study.best_params)
     print("Najlepszy wynik (Val Loss):", study.best_value)

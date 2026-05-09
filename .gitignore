@@ -1,0 +1,6 @@
+data/
+__pycache__/
+hw-lightning-optuna/
+wandb/
+venv/
+lightning_logs/

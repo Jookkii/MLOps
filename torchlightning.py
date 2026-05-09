@@ -6,6 +6,7 @@ from torchvision import transforms, datasets
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import optuna
+import bentoml
 
 class MNISTDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "./data", batch_size: int = 64):
@@ -80,7 +81,7 @@ def objective(trial):
     wandb_logger = WandbLogger(project="hw-lightning-optuna", name=f"trial_{trial.number}")
 
     trainer = pl.Trainer(
-        max_epochs=20, 
+        max_epochs=8, 
         logger=wandb_logger,
         enable_progress_bar=True,
     )
@@ -95,7 +96,28 @@ def objective(trial):
 if __name__ == "__main__":
     print("Rozpoczynamy poszukiwania hiperparametrów...")
     study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=3)
 
     print("Najlepsze parametry:", study.best_params)
     print("Najlepszy wynik (Val Loss):", study.best_value)
+
+    final_datamodule = MNISTDataModule(batch_size=study.best_params["batch_size"])
+    final_model = SimpleLitModel(
+        learning_rate=study.best_params["lr"],
+        hidden_size=study.best_params["hidden_size"]
+    )
+    
+    trainer = pl.Trainer(max_epochs=10) # możesz dać więcej epok dla finalnego modelu
+    trainer.fit(final_model, datamodule=final_datamodule)
+
+    # ZAPIS DO BENTOML
+    # Ważne: Zapisujemy final_model.model (czyli czyste nn.Sequential), 
+    # bo BentoML lepiej radzi sobie z czystym PyTorchem niż z LightningModule
+    
+    bento_model = bentoml.pytorch.save_model(
+        "mnist_mlp_model", 
+        final_model.model,  # wyciągamy samo nn.Sequential
+        signatures={"forward": {"batchable": True, "batch_dim": 0}}
+    )
+    
+    print(f"Model zapisany w BentoML: {bento_model}")

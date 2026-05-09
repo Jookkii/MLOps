@@ -1,0 +1,11 @@
+service: "service:MNISTService"
+labels:
+  owner: student_mlops
+  project: mnist_classification
+include:
+  - "service.py"
+python:
+  packages:
+    - torch
+    - numpy
+    - Pillow

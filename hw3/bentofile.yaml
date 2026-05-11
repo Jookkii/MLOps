@@ -6,6 +6,7 @@ include:
   - "*.py"
 python:
   packages:
-    - torch
-    - transformers
-    - bentoml
+    - "torch --index-url https://download.pytorch.org/whl/cpu"
+    - "transformers"
+    - "accelerate"
+    - "sentencepiece"

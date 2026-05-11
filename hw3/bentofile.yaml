@@ -1,0 +1,11 @@
+service: "hw3model_service:SmolLMService"
+labels:
+  owner: user
+  project: smollm_deployment
+include:
+  - "*.py"
+python:
+  packages:
+    - torch
+    - transformers
+    - bentoml

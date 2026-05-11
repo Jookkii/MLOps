@@ -5,6 +5,7 @@ labels:
 include:
   - "*.py"
 python:
+  lock_packages: false
   packages:
     - "torch --index-url https://download.pytorch.org/whl/cpu"
     - "transformers"

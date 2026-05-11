@@ -4,17 +4,18 @@ import requests
 prompt = ""
 print("type in your prompt")
 
+current_ip = ""
 if prompt == "":
     prompt = input()
 
-print("Wysyłanie requesta do localhost:3000/generate...")
+print("wysyłanie requesta do vm/generate...")
 
 
 try:
     # BentoML przyjmuje JSON-a, więc zamieniamy tablicę numpy na listę Pythona
-    
+    url = "http://"+current_ip+":3000/generate"
     response = requests.post(
-        "http://localhost:3000/generate",
+        url,
         json={"prompt": prompt}, # Nazwa klucza musi pasować do argumentu w service.py
         timeout=10
     )
